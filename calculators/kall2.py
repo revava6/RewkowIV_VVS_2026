@@ -1,36 +1,32 @@
-otvetik = 0
-
 def plus(x, y):
-    global otvetik
-    otvetik = x + y
-    return otvetik
+    return x + y
+
 
 def minus(pervoe, vtoroe):
-    rez = pervoe - vtoroe
-    return rez
+    return pervoe - vtoroe
+
 
 def umnozh(a, b):
-    c = a * b
-    return c
+    return a * b
+
 
 def delenie(chisloA, chisloB):
     if chisloB == 0:
-        return "oshibka nol"
-    else:
-        d = chisloA / chisloB
-        return d
+        return "На ноль делить нельзя!"
+    return chisloA / chisloB
 
-nomer1 = float(input("chislo 1: "))
-deystvie = input("deystvie (+, -, *, /): ")
-nomer2 = float(input("chislo 2: "))
+
+nomer1 = float(input("Первое число: "))
+deystvie = input("Действие (+, -, *, /): ")
+nomer2 = float(input("Второе число: "))
 
 if deystvie == "+":
-    print("Resultat: ", plus(nomer1, nomer2))
+    print("Результат:", plus(nomer1, nomer2))
 elif deystvie == "-":
-    print("Resultat: ", minus(nomer1, nomer2))
+    print("Результат:", minus(nomer1, nomer2))
 elif deystvie == "*":
-    print("Resultat: ", umnozh(nomer1, nomer2))
+    print("Результат:", umnozh(nomer1, nomer2))
 elif deystvie == "/":
-    print("Resultat: ", delenie(nomer1, nomer2))
+    print("Результат:", delenie(nomer1, nomer2))
 else:
-    print("chto-to poshlo ne tak...")
+    print("Что-то пошло не так...")

@@ -1,5 +1,4 @@
 import random
-from collections import Counter
 
 n = random.randint(5, 10)
 m = random.randint(5, 10)
@@ -8,13 +7,12 @@ labirint[0][0] = '&'
 
 seen = [[False for _ in range(m)] for _ in range(n)]
 
+
 def reveal_around(cx, cy):
-    """Открывает туман войны в радиусе 1 клетки вокруг (cx, cy)"""
     for i in range(max(0, cx - 1), min(n, cx + 2)):
         for j in range(max(0, cy - 1), min(m, cy + 2)):
             seen[i][j] = True
 
-# Открываем клетки вокруг игрока на старте
 reveal_around(0, 0)
 
 inventory = []
@@ -25,29 +23,41 @@ portal_open = False
 
 LOAN_LIMIT = 1_000_000
 
-# ---------- Показ ----------
+
 def show(labirint):
     print("\n" + "=" * (m * 2 + 3))
     for x, row in enumerate(labirint):
         line = "  "
         for y, cell in enumerate(row):
-            line += (cell if seen[x][y] else "?") + " "
+            if seen[x][y]:
+                line += cell + " "
+            else:
+                line += "? "
         print(line)
     print("=" * (m * 2 + 3))
-    print(f"🎒 Инвентарь: {', '.join(inventory) if inventory else 'пусто'}")
-    print(f"🪙 Золото: {gold}" + (f"  |  ⚠️ Долг: {debt}" if debt > 0 else ""))
-    print(f"🌀 Портал: {'открыт' if portal_open else 'закрыт'}")
+    if inventory:
+        print("🎒 Инвентарь:", ", ".join(inventory))
+    else:
+        print("🎒 Инвентарь: пусто")
+    if debt > 0:
+        print(f"🪙 Золото: {gold}  |  ⚠️ Долг: {debt}")
+    else:
+        print(f"🪙 Золото: {gold}")
+    if portal_open:
+        print("🌀 Портал: открыт")
+    else:
+        print("🌀 Портал: закрыт")
     print("Управление: w/a/s/d — шаг, i — инвентарь, q — выход\n")
 
-# ---------- Поиск игрока ----------
+
 def player(labirint):
     for x, row in enumerate(labirint):
         for y, cell in enumerate(row):
             if cell == '&':
-                return (x, y)
-    return (0, 0)
+                return x, y
+    return 0, 0
 
-# ---------- Расстановка ----------
+
 def place(symbol, count):
     placed = 0
     while placed < count:
@@ -57,13 +67,14 @@ def place(symbol, count):
             labirint[x][y] = symbol
             placed += 1
 
+
 place('M', 3)
 place('C', 4)
 place('K', 1)
 place('P', 1)
 place('$', 1)
 
-# ---------- Лут из сундука ----------
+
 def open_chest():
     global gold
     loot = random.choice([
@@ -81,7 +92,7 @@ def open_chest():
         inventory.append(loot)
         print(f"📦 Сундук! Ты нашёл: {loot}")
 
-# ---------- Бой с монстром ----------
+
 def fight_monster():
     if 'меч ✦' in inventory:
         print("⚔️ Монстр! Твой зачарованный меч разрубил его. Меч остался цел.")
@@ -97,18 +108,17 @@ def fight_monster():
     print("💀 Ты наткнулся на монстра без оружия и защиты! Игра окончена.")
     exit()
 
-# ---------- Проверка банкротства ----------
-def check_bankrupt():
-    if gold <= 0:
-        if loan_taken_total >= LOAN_LIMIT:
-            print("💀 Ты проиграл всё золото и исчерпал кредитный лимит! Игра окончена.")
-            exit()
-        else:
-            print("💸 У тебя закончилось золото! Возьми кредит в меню казино или уходи.")
-            return True
-    return False
 
-# ---------- Ввод ставки ----------
+def check_bankrupt():
+    if gold > 0:
+        return False
+    if loan_taken_total >= LOAN_LIMIT:
+        print("💀 Ты проиграл всё золото и исчерпал кредитный лимит! Игра окончена.")
+        exit()
+    print("💸 У тебя закончилось золото! Возьми кредит в меню казино или уходи.")
+    return True
+
+
 def get_bet():
     if check_bankrupt():
         return None
@@ -128,10 +138,8 @@ def get_bet():
         return 0
     return bet
 
-# ============ ПОКЕР ============
-
-RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
-SUITS = ['♠','♥','♦','♣']
+RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+SUITS = ['♠', '♥', '♦', '♣']
 RANK_VALUE = {r: i for i, r in enumerate(RANKS, start=2)}
 
 HAND_NAMES = {
@@ -140,17 +148,27 @@ HAND_NAMES = {
     2: "Две пары", 1: "Пара", 0: "Старшая карта",
 }
 
+
 def make_deck():
-    deck = [(r, s) for r in RANKS for s in SUITS]
+    deck = []
+    for rank in RANKS:
+        for suit in SUITS:
+            deck.append((rank, suit))
     random.shuffle(deck)
     return deck
+
 
 def hand_str(hand):
     return ' '.join(f"{r}{s}" for r, s in hand)
 
+
 def evaluate_hand(hand):
-    ranks = sorted([RANK_VALUE[r] for r, _ in hand], reverse=True)
-    suits = [s for _, s in hand]
+    ranks = []
+    suits = []
+    for rank, suit in hand:
+        ranks.append(RANK_VALUE[rank])
+        suits.append(suit)
+    ranks.sort(reverse=True)
     flush = len(set(suits)) == 1
     unique = sorted(set(ranks), reverse=True)
 
@@ -162,20 +180,35 @@ def evaluate_hand(hand):
             straight = True
             unique = [5, 4, 3, 2, 1]
 
-    counts = Counter(ranks)
-    freq = sorted(counts.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
-    freqs = [c for _, c in freq]
-    ordered = [v for v, _ in freq]
+    groups = []
+    for rank in set(ranks):
+        groups.append((ranks.count(rank), rank))
+    groups.sort(reverse=True)
 
-    if straight and flush: return (8, tuple(unique))
-    if freqs[0] == 4: return (7, tuple(ordered))
-    if freqs[0] == 3 and freqs[1] == 2: return (6, tuple(ordered))
-    if flush: return (5, tuple(ranks))
-    if straight: return (4, tuple(unique))
-    if freqs[0] == 3: return (3, tuple(ordered))
-    if freqs[0] == 2 and freqs[1] == 2: return (2, tuple(ordered))
-    if freqs[0] == 2: return (1, tuple(ordered))
+    freqs = []
+    ordered = []
+    for count, rank in groups:
+        freqs.append(count)
+        ordered.append(rank)
+
+    if straight and flush:
+        return (8, tuple(unique))
+    if freqs[0] == 4:
+        return (7, tuple(ordered))
+    if freqs[0] == 3 and freqs[1] == 2:
+        return (6, tuple(ordered))
+    if flush:
+        return (5, tuple(ranks))
+    if straight:
+        return (4, tuple(unique))
+    if freqs[0] == 3:
+        return (3, tuple(ordered))
+    if freqs[0] == 2 and freqs[1] == 2:
+        return (2, tuple(ordered))
+    if freqs[0] == 2:
+        return (1, tuple(ordered))
     return (0, tuple(ranks))
+
 
 def poker():
     global gold
@@ -193,17 +226,17 @@ def poker():
         player_hand = [deck.pop() for _ in range(5)]
         dealer_hand = [deck.pop() for _ in range(5)]
 
-        p_cat, p_tie = evaluate_hand(player_hand)
-        d_cat, d_tie = evaluate_hand(dealer_hand)
+        player_score = evaluate_hand(player_hand)
+        dealer_score = evaluate_hand(dealer_hand)
 
-        print(f"\n  Твои карты:   {hand_str(player_hand)}  — {HAND_NAMES[p_cat]}")
-        print(f"  Карты дилера: {hand_str(dealer_hand)}  — {HAND_NAMES[d_cat]}")
+        print(f"\n  Твои карты:   {hand_str(player_hand)}  — {HAND_NAMES[player_score[0]]}")
+        print(f"  Карты дилера: {hand_str(dealer_hand)}  — {HAND_NAMES[dealer_score[0]]}")
 
-        if (p_cat, p_tie) > (d_cat, d_tie):
+        if player_score > dealer_score:
             win = bet * 2
             gold += win
             print(f"🏆 Ты выиграл! +{win}")
-        elif (p_cat, p_tie) == (d_cat, d_tie):
+        elif player_score == dealer_score:
             gold += bet
             print(f"🤝 Ничья. Ставка возвращается: {bet}")
         else:
@@ -215,7 +248,7 @@ def poker():
         if input("Ещё? (Enter — да, n — нет): ").strip().lower() == 'n':
             return
 
-# ---------- Кредит ----------
+
 def take_loan():
     global gold, debt, loan_taken_total
     remaining = LOAN_LIMIT - loan_taken_total
@@ -239,6 +272,7 @@ def take_loan():
     debt += amount
     loan_taken_total += amount
     print(f"Ты взял {amount} золота. Текущий долг: {debt}.")
+
 
 def repay_loan():
     global gold, debt
@@ -264,7 +298,7 @@ def repay_loan():
     debt -= pay
     print(f"Ты вернул {pay}. Остаток долга: {debt}.")
 
-# ---------- Рулетка ----------
+
 def roulette():
     global gold
     print("\n--- РУЛЕТКА ---")
@@ -294,9 +328,9 @@ def roulette():
         if input("Ещё? (Enter — да, n — нет): ").strip().lower() == 'n':
             return
 
-# ---------- Слоты ----------
 SLOT_SYMBOLS = ['🍒', '🍋', '🔔', '💎', '7️⃣']
 SLOT_MULTIPLIERS = {'🍒': 3, '🍋': 4, '🔔': 6, '💎': 10, '7️⃣': 20}
+
 
 def slots():
     global gold
@@ -333,12 +367,15 @@ def slots():
         if input("Ещё? (Enter — да, n — нет): ").strip().lower() == 'n':
             return
 
-# ---------- Меню казино ----------
+
 def casino():
     global gold
     while True:
         print("\n=== 🎰 КАЗИНО ===")
-        print(f"Золото: {gold}" + (f" | ⚠️ Долг: {debt}" if debt > 0 else ""))
+        if debt > 0:
+            print(f"Золото: {gold} | ⚠️ Долг: {debt}")
+        else:
+            print(f"Золото: {gold}")
         print("  1 — Рулетка")
         print("  2 — Слоты")
         print("  3 — Покер")
@@ -373,9 +410,8 @@ def casino():
                 print("Ты вышел из казино.")
                 return
 
-# ---------- Обработка клетки ----------
+
 def on_enter(cell):
-    """Возвращает True, если игрок должен переместиться на эту клетку"""
     if cell == 'M':
         return fight_monster()
     elif cell == 'C':
@@ -387,21 +423,19 @@ def on_enter(cell):
         return True
     elif cell == '$':
         casino()
-        # Возвращаем False, чтобы значок казино '$' не затирался игроком и туда можно было зайти снова
         return False
     elif cell == 'P':
-        if portal_open:
-            if debt > 0:
-                print(f"🌀 Портал перед тобой, но магический барьер не пускает должников (долг: {debt})!")
-                return False
-            print("🎉 Ты вошёл в открытый портал и прошёл игру! Победа!")
-            exit()
-        else:
+        if not portal_open:
             print("🔒 Портал закрыт. Открой инвентарь (клавиша i) и используй ключ.")
             return False
+        if debt > 0:
+            print(f"🌀 Портал перед тобой, но магический барьер не пускает должников (долг: {debt})!")
+            return False
+        print("🎉 Ты вошёл в открытый портал и прошёл игру! Победа!")
+        exit()
     return True
 
-# ---------- Движение ----------
+
 def try_move(dx, dy):
     x, y = player(labirint)
     nx, ny = x + dx, y + dy
@@ -409,7 +443,6 @@ def try_move(dx, dy):
         print("🧱 Там стена лабиринта!")
         return
 
-    # Открываем клетку, в которую пытаемся шагнуть (чтобы видеть портал или казино)
     seen[nx][ny] = True
     target = labirint[nx][ny]
 
@@ -418,7 +451,7 @@ def try_move(dx, dy):
         labirint[nx][ny] = '&'
         reveal_around(nx, ny)
 
-# ---------- Зачарование ----------
+
 def enchant_sword():
     if 'меч ✦' in inventory:
         print("Твой меч уже зачарован.")
@@ -432,7 +465,7 @@ def enchant_sword():
         inventory.append('меч ✦')
         print("✨ Ты зачаровал меч! Теперь он никогда не сломается.")
 
-# ---------- Инвентарь ----------
+
 def inventory_menu():
     global portal_open
     if not inventory:
@@ -442,43 +475,45 @@ def inventory_menu():
     for i, item in enumerate(inventory, 1):
         print(f"  {i}. {item}")
     sub = input("(u)использовать / (e)зачаровать меч / (s)ортировать / (d)выбросить / Enter — назад: ").strip().lower()
-    
+
     if sub == 's':
         inventory.sort()
         print("Отсортировано.")
-    elif sub == 'd':
-        try:
-            idx = int(input("Номер предмета: ")) - 1
-            if 0 <= idx < len(inventory):
-                if inventory[idx] == 'ключ':
-                    print("Ключ нельзя выбрасывать, иначе не выберешься из лабиринта!")
-                else:
-                    print("Выброшено:", inventory.pop(idx))
-            else:
-                print("Неверный номер.")
-        except ValueError:
-            print("Нужно число.")
-    elif sub == 'u':
-        try:
-            idx = int(input("Номер предмета для использования: ")) - 1
-            if 0 <= idx < len(inventory):
-                item = inventory[idx]
-                if item == 'ключ':
-                    inventory.pop(idx)
-                    portal_open = True
-                    print("🔑 Ты повернул ключ в воздухе — где-то в лабиринте открылся портал!")
-                elif item == 'странный камень':
-                    print("Красивый блестящий булыжник. Возможно, его купят в казино.")
-                else:
-                    print(f"Предмет «{item}» применяется автоматически в бою или через другие меню.")
-            else:
-                print("Неверный номер.")
-        except ValueError:
-            print("Нужно число.")
-    elif sub == 'e':
+        return
+    if sub == 'e':
         enchant_sword()
+        return
+    if sub not in ('d', 'u'):
+        return
 
-# ---------- Главный цикл ----------
+    if sub == 'd':
+        prompt = "Номер предмета: "
+    else:
+        prompt = "Номер предмета для использования: "
+    try:
+        idx = int(input(prompt)) - 1
+    except ValueError:
+        print("Нужно число.")
+        return
+    if not 0 <= idx < len(inventory):
+        print("Неверный номер.")
+        return
+
+    item = inventory[idx]
+    if sub == 'd':
+        if item == 'ключ':
+            print("Ключ нельзя выбрасывать, иначе не выберешься из лабиринта!")
+        else:
+            print("Выброшено:", inventory.pop(idx))
+    elif item == 'ключ':
+        inventory.pop(idx)
+        portal_open = True
+        print("🔑 Ты повернул ключ в воздухе — где-то в лабиринте открылся портал!")
+    elif item == 'странный камень':
+        print("Красивый блестящий булыжник. Возможно, его купят в казино.")
+    else:
+        print(f"Предмет «{item}» применяется автоматически в бою или через другие меню.")
+
 MOVES = {
     'w': (-1, 0),
     's': (1, 0),

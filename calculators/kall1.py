@@ -1,24 +1,20 @@
-chislo1 = float(input("vvedi chislo 1: "))
-znak = input("znak: ")
-chislo2 = float(input("vvedi chislo 2: "))
+chislo1 = float(input("Введи первое число: "))
+znak = input("Знак (+, -, *, /): ")
+chislo2 = float(input("Введи второе число: "))
 
-otvet = 0
+otvet = None
 
 if znak == '+':
     otvet = chislo1 + chislo2
-    print("otvet poluchilsya: " + str(otvet))
-
-if znak == '-':
+elif znak == '-':
     otvet = chislo1 - chislo2
-    print("otvet poluchilsya: " + str(otvet))
-
-if znak == '*':
+elif znak == '*':
     otvet = chislo1 * chislo2
-    print("otvet poluchilsya: " + str(otvet))
-
-if znak == '/':
+elif znak == '/':
     if chislo2 == 0:
-        print("na nol delit nelzya durak")
-    if chislo2 != 0:
+        print("На ноль делить нельзя!")
+    else:
         otvet = chislo1 / chislo2
-        print("otvet poluchilsya: " + str(otvet))
+
+if otvet is not None:
+    print("Ответ:", otvet)

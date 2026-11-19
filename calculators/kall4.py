@@ -1,20 +1,18 @@
 class KalkulyatorStudenta:
     def __init__(self, dengi, dni):
-        # zapominaem peremennye vnutri klassa cherez self
         self.dengi = dengi
         self.dni = dni
         self.na_odin_den = 0
-        
-        # tseny na studencheskuyu edu (v rublyah)
+
         self.eda = {
-            "Doshirak s govyadinoi": 65,
-            "Rollton v paketike": 30,
-            "Baton 'Krasnaya tsena' + mayonez": 55,
-            "Pelmeni 'Kazhdyi den' (iz kartona)": 130,
-            "Sosiski 'Druzhnaya semeyka'": 85,
-            "Grechka bez masla i soli": 40,
-            "Energetik 'Flash' po skeedke": 60,
-            "Shaurma na vokzale (korolevskiy pir)": 260
+            "Доширак с говядиной": 65,
+            "Роллтон в пакетике": 30,
+            "Батон «Красная цена» + майонез": 55,
+            "Пельмени «Каждый день» (из картона)": 130,
+            "Сосиски «Дружная семейка»": 85,
+            "Гречка без масла и соли": 40,
+            "Энергетик «Флеш» по скидке": 60,
+            "Шаурма на вокзале (королевский пир)": 260
         }
 
     def schitat_dnevnoi_byudzhet(self):
@@ -26,42 +24,42 @@ class KalkulyatorStudenta:
     def status_vyzhivaniya(self):
         den = self.schitat_dnevnoi_byudzhet()
         if den <= 0:
-            return "Prazdnik: ty uzhe trup, idi prosit edu u sosedey"
+            return "Праздник: ты уже труп, иди просить еду у соседей"
         if den < 70:
-            return "Opasno: pitaemsya kipyatkom i solyu, perehodim na fotosintez"
+            return "Опасно: питаемся кипятком и солью, переходим на фотосинтез"
         if den < 200:
-            return "Norm: rezhym zhyostkoy ekonomii, no do stipuhi dotyanesh"
+            return "Норм: режим жёсткой экономии, но до стипухи дотянешь"
         if den < 500:
-            return "Horosho: mozhno dazhe zhiravat i kupit syrok 'B.Yu. Aleksandrov'"
+            return "Хорошо: можно даже шикануть и купить сырок «Б. Ю. Александров»"
         if den >= 500:
-            return "Oligarh obshagi: mozhno ugoshchat ves etazh"
+            return "Олигарх общаги: можно угощать весь этаж"
 
     def raschet_edy(self):
         den = self.schitat_dnevnoi_byudzhet()
-        print("\n--- SKOLKO EDY TY MOZHESH POEST NA SUTKI: ---")
-        for nazvanie in self.eda:
-            tsena = self.eda[nazvanie]
+        dengi_dlya_rascheta = 1
+        if den > 0:
+            dengi_dlya_rascheta = den
+
+        print("\n--- СКОЛЬКО ЕДЫ МОЖНО КУПИТЬ НА ДЕНЬ ---")
+        for nazvanie, tsena in self.eda.items():
             shtuk_v_den = den / tsena
-            # kleim stroki cherez plyusy
+
             if shtuk_v_den >= 1:
-                print(nazvanie + " -> mozhno tselih " + str(int(shtuk_v_den)) + " shtuk v den!")
+                print(nazvanie + " -> можно целых " + str(int(shtuk_v_den)) + " шт. в день!")
             else:
-                skolko_nado_kopit = tsena / (den if den > 0 else 1)
-                print(nazvanie + " -> ne hvataet, nado kopit " + str(round(skolko_nado_kopit, 1)) + " dney")
+                skolko_nado_kopit = tsena / dengi_dlya_rascheta
+                print(nazvanie + " -> не хватает, надо копить " + str(round(skolko_nado_kopit, 1)) + " дн.")
 
 
-# === OSNOVNAYA PROGRAMMA ===
+babki = float(input("Сколько денег осталось на карте (руб.): "))
+skolko_dney = int(input("Сколько дней до стипендии или перевода от родителей: "))
 
-babki = float(input("Skolko deneg na karte ostalos (rub): "))
-skolko_dney = int(input("Skolko dney do stipuhi / roditeley: "))
-
-# sozdayom obyekt klassa (kopiruem shablon v peremennuyu)
 student = KalkulyatorStudenta(babki, skolko_dney)
 
 byudzhet = student.schitat_dnevnoi_byudzhet()
 
-print("\n================ REZULTAT ================")
-print("Tvoi byudzhet na den: " + str(round(byudzhet, 2)) + " rubley")
-print("Status vyzhivaniya: " + student.status_vyzhivaniya())
+print("\n================ РЕЗУЛЬТАТ ================")
+print("Твой бюджет на день: " + str(round(byudzhet, 2)) + " руб.")
+print("Статус выживания: " + student.status_vyzhivaniya())
 student.raschet_edy()
 print("==========================================")

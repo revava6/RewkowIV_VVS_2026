@@ -1,4 +1,3 @@
-"""Конвертер длины, массы и температуры на PyQt6. Пункты задания отмечены [1]...[10]."""
 import math
 import sys
 
@@ -23,30 +22,40 @@ UNITS = {
 
 
 def convert(value, category, src, dst):
-    if category == "Температура":
-        c = {"°C": value, "°F": (value - 32) * 5 / 9, "K": value - 273.15}[src]
-        return {"°C": c, "°F": c * 9 / 5 + 32, "K": c + 273.15}[dst]
-    factors = UNITS[category]
-    return value * factors[src] / factors[dst]
+    if category != "Температура":
+        factors = UNITS[category]
+        return value * factors[src] / factors[dst]
+
+    c = value
+    if src == "°F":
+        c = (value - 32) * 5 / 9
+    elif src == "K":
+        c = value - 273.15
+    elif src != "°C":
+        raise KeyError(src)
+
+    if dst == "°F":
+        return c * 9 / 5 + 32
+    if dst == "K":
+        return c + 273.15
+    if dst == "°C":
+        return c
+    raise KeyError(dst)
 
 
-# [1] Главное окно
 class Converter(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Конвертер величин")
         self.resize(420, 500)
 
-        # [2] Текстовые элементы
         title = QLabel("Конвертер величин")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
 
-        # [3] Поле ввода
         self.value_input = QLineEdit()
         self.value_input.setPlaceholderText("Например, 12.5")
 
-        # [5] Выбор параметров
         self.category = QComboBox()
         self.category.addItems(list(UNITS))
         self.src = QComboBox()
@@ -55,17 +64,14 @@ class Converter(QMainWindow):
         self.precision.setRange(0, 6)
         self.precision.setValue(2)
 
-        # [4] Кнопки
         self.convert_btn = QPushButton("Перевести")
         self.swap_btn = QPushButton("⇄ Поменять местами")
         self.clear_btn = QPushButton("Очистить историю")
 
-        # [6] Вывод результатов: строка результата и история
         self.result_label = QLabel("Результат: —")
         self.result_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.history = QListWidget()
 
-        # [10] Компоновка
         form = QFormLayout()
         form.addRow("Величина:", self.category)
         form.addRow("Значение:", self.value_input)
@@ -89,7 +95,6 @@ class Converter(QMainWindow):
         central.setLayout(layout)
         self.setCentralWidget(central)
 
-        # [7] Обработка событий
         self.category.currentTextChanged.connect(self.update_units)
         self.convert_btn.clicked.connect(self.do_convert)
         self.value_input.returnPressed.connect(self.do_convert)
@@ -105,18 +110,20 @@ class Converter(QMainWindow):
         self.dst.setCurrentIndex(1)
 
     def swap(self):
-        i, j = self.src.currentIndex(), self.dst.currentIndex()
-        self.src.setCurrentIndex(j)
-        self.dst.setCurrentIndex(i)
+        old_src = self.src.currentIndex()
+        self.src.setCurrentIndex(self.dst.currentIndex())
+        self.dst.setCurrentIndex(old_src)
 
     def do_convert(self):
-        category, src, dst = self.category.currentText(), self.src.currentText(), self.dst.currentText()
+        category = self.category.currentText()
+        src = self.src.currentText()
+        dst = self.dst.currentText()
+        text = self.value_input.text().strip().replace(",", ".")
 
-        # [8] Проверка данных
         try:
-            value = float(self.value_input.text().strip().replace(",", "."))
+            value = float(text)
         except ValueError:
-            QMessageBox.warning(self, "Ошибка ввода", "Введите число.")  # [9]
+            QMessageBox.warning(self, "Ошибка ввода", "Введите число.")
             return
         if not math.isfinite(value):
             QMessageBox.warning(self, "Ошибка ввода", "Введите конечное число.")
@@ -132,13 +139,14 @@ class Converter(QMainWindow):
         if not math.isfinite(result):
             QMessageBox.warning(self, "Ошибка ввода", "Результат слишком велик. Введите меньшее число.")
             return
-        p = self.precision.value()
-        self.result_label.setText(f"Результат: {result:.{p}f} {dst}")
-        self.history.insertItem(0, f"{value:g} {src} = {result:.{p}f} {dst}")
+        digits = self.precision.value()
+        answer = f"{result:.{digits}f} {dst}"
+        self.result_label.setText(f"Результат: {answer}")
+        self.history.insertItem(0, f"{value:g} {src} = {answer}")
 
     def clear_history(self):
         if self.history.count() == 0:
-            QMessageBox.information(self, "История", "История и так пуста.")  # [9]
+            QMessageBox.information(self, "История", "История и так пуста.")
             return
         answer = QMessageBox.question(
             self, "Подтверждение", "Удалить всю историю?",
